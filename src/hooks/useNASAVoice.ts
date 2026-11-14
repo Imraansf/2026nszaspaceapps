@@ -82,6 +82,12 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
 
   const animationFrameRef = useRef<number | null>(null);
   const speechIntervalRef = useRef<number | null>(null);
+  const speakTimeoutRef = useRef<number | null>(null);
+  const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(selectedVoice);
+
+  useEffect(() => {
+    selectedVoiceRef.current = selectedVoice;
+  }, [selectedVoice]);
 
   // 1. Initialise Web Audio API context and Apollo radio filter processing graph
   const initAudioChain = useCallback(() => {
@@ -264,7 +270,7 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
       setVoices(candidatePool);
 
       // Auto-select best voice if not already selected
-      if (!selectedVoice && sortedVoices.length > 0) {
+      if (!selectedVoiceRef.current && sortedVoices.length > 0) {
         setSelectedVoice(sortedVoices[0]);
       }
     };
@@ -277,7 +283,7 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
         window.speechSynthesis.onvoiceschanged = null;
       }
     };
-  }, [selectedVoice]);
+  }, []);
 
   // 5. Simulated radio voice modulation onto analyser node
   // Since Web Speech API cannot route PCM directly to an AudioNode in some browsers,
@@ -341,6 +347,10 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
 
   // 6. Stop / Cancel Transmission
   const stop = useCallback(() => {
+    if (speakTimeoutRef.current !== null) {
+      clearTimeout(speakTimeoutRef.current);
+      speakTimeoutRef.current = null;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -470,7 +480,8 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
 
       // Slight delay so the Quindar beep is heard first like Apollo CapCom push-to-talk
       const delayMs = effectiveFilter ? 80 : 0;
-      setTimeout(() => {
+      speakTimeoutRef.current = window.setTimeout(() => {
+        speakTimeoutRef.current = null;
         window.speechSynthesis.speak(utterance);
       }, delayMs);
     },
@@ -492,6 +503,10 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (speakTimeoutRef.current !== null) {
+        clearTimeout(speakTimeoutRef.current);
+        speakTimeoutRef.current = null;
+      }
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }

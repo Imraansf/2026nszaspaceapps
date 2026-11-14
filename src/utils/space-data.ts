@@ -1457,6 +1457,30 @@ export const LUNAR_LANDMARKS: PlanetaryLandmark[] = [
       'Site where Apollo 15 astronauts found the 4.1-billion-year-old anorthosite "Genesis Rock".',
     associatedArtifactId: 'apollo-15-falcon-lrv-alsep',
   },
+  {
+    id: 'aristarchus',
+    name: 'Aristarchus Crater',
+    body: 'moon',
+    type: 'crater',
+    coordinates: { lat: 23.7, lon: -47.4 },
+    diameterKm: 40,
+    description:
+      'The brightest large formation on the lunar near side, exhibiting an intense ray system and deep terraced walls on the Aristarchus Plateau.',
+    significance:
+      'A premier example of a young Copernican-era impact exposing deep highland anorthosite above surrounding mare basalts.',
+  },
+  {
+    id: 'serenitatis',
+    name: 'Mare Serenitatis (Sea of Serenity)',
+    body: 'moon',
+    type: 'mare',
+    coordinates: { lat: 28.0, lon: 17.5 },
+    diameterKm: 674,
+    description:
+      'Prominent circular volcanic mare northeast of Mare Tranquillitatis, filled with dark basaltic lava flows and bordered by the Montes Caucasus and Taurus mountains.',
+    significance:
+      'A classic lunar mascon (mass concentration) basin and exploration boundary for Apollo 15 and Apollo 17.',
+  },
 ];
 
 export const MARS_LANDMARKS: PlanetaryLandmark[] = [

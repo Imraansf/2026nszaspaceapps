@@ -4,7 +4,6 @@ import {
   getArtifacts,
   getPlanetaryLandmarks,
   getArtifactById,
-  getArtifactColor,
 } from './utils/space-data';
 import { CelestialGlobe } from './components/CelestialGlobe';
 import { CesiumGlobeViewer } from './components/CesiumGlobeViewer';
@@ -44,7 +43,17 @@ export default function App() {
   const [isTimelineCollapsed, setIsTimelineCollapsed] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hasSelectedPlanet, setHasSelectedPlanet] = useState(false);
   const [zoneVisitId, setZoneVisitId] = useState(0);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isMenuOpen]);
 
   const artifacts = useMemo(() => getArtifacts(currentBody), [currentBody]);
   const landmarks = useMemo(() => getPlanetaryLandmarks(currentBody), [currentBody]);
@@ -142,6 +151,7 @@ export default function App() {
           showLandmarks={showLandmarks}
           handleSelectLandmark={handleSelectLandmark}
           selectedLandmark={selectedLandmark}
+          onPlanetFocusChange={setHasSelectedPlanet}
         />
       </div>
 
@@ -361,7 +371,7 @@ export default function App() {
           {/* Timeline Carousel Strip: Simplistic & Mobile Friendly */}
           {!isTimelineCollapsed && (
             <div
-              className={`pointer-events-auto w-[678px] max-w-full h-[65.7875px] sm:translate-x-20 md:translate-x-32 backdrop-blur-xl rounded-xl sm:rounded-2xl p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory ${
+              className={`pointer-events-auto w-[678px] max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-11.5rem)] md:max-w-[calc(100vw-17.5rem)] h-[65.7875px] sm:translate-x-20 md:translate-x-32 backdrop-blur-xl rounded-xl sm:rounded-2xl p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory ${
                 isMars
                   ? 'bg-[rgba(28,20,15,0.85)] border border-[#57534E] shadow-[0_10px_30px_rgba(0,0,0,0.55)]'
                   : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none'
@@ -521,7 +531,11 @@ export default function App() {
         key={`${currentBody}-${zoneVisitId}`}
         body={currentBody}
         isTemporarilyHidden={Boolean(
-          selectedArtifact || selectedLandmark || isDossierOpen || inspectingArtifact
+          selectedArtifact ||
+            selectedLandmark ||
+            isDossierOpen ||
+            inspectingArtifact ||
+            hasSelectedPlanet
         )}
       />
     </div>
@@ -538,7 +552,8 @@ const ViewportSection = React.memo(({
   landmarks,
   showLandmarks,
   handleSelectLandmark,
-  selectedLandmark
+  selectedLandmark,
+  onPlanetFocusChange,
 }: any) => {
   return (
     <>
@@ -548,6 +563,7 @@ const ViewportSection = React.memo(({
           artifacts={filteredArtifacts}
           selectedArtifact={selectedArtifact}
           onSelectArtifact={handleSelectArtifact}
+          onPlanetFocusChange={onPlanetFocusChange}
         />
       ) : engineMode === 'cesium' ? (
         <CesiumGlobeViewer

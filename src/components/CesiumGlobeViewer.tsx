@@ -1,15 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { PlanetaryLandmark } from '../types/space';
-import {
-  Compass,
-  RotateCcw,
-  Globe,
-  MapPin,
-  Crosshair,
-  Layers,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { TelemetryHUD } from './TelemetryHUD';
 
 declare const Cesium: any;
@@ -244,7 +235,7 @@ function updateGlobeHorizonOcclusion(viewer: any, ellipsoid: any) {
 
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
-    if (!entity.isRelic && !entity.isLandmark) continue;
+    if (!entity.isRelic && !entity.isLandmark && !entity.isSurface3DModel) continue;
     const posProp = entity.position;
     if (!posProp) continue;
     const pos =
@@ -301,7 +292,6 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = React.memo(({
   const [crosshairCoords, setCrosshairCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [cameraHeightKm, setCameraHeightKm] = useState<number>(0);
   const [activePreset, setActivePreset] = useState<'orbital' | 'north' | 'equator' | 'target'>('orbital');
-  const [isOrbiting3dModel, setIsOrbiting3dModel] = useState(false);
 
   const normalizedBody = selectedBody.toUpperCase() as 'MOON' | 'MARS';
 
@@ -937,6 +927,7 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = React.memo(({
       },
     });
 
+    updateGlobeHorizonOcclusion(viewer, planetaryEllipsoid);
     viewer.scene.requestRender();
   }, [selectedRelicId, currentBodyRelics, normalizedBody]);
 
@@ -1171,26 +1162,26 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = React.memo(({
             className={`pointer-events-auto p-2.5 sm:p-3 max-w-[240px] rounded-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 ${
               isMars
                 ? 'bg-[rgba(28,20,15,0.88)] border border-[#57534E] shadow-[0_8px_28px_rgba(0,0,0,0.5)] text-[#F5E6D3]'
-                : 'bg-[rgba(6,9,15,0.90)] border-2 border-[#7C3AED] shadow-[0_0_20px_rgba(124,58,237,0.25)] text-[#F8FAFC]'
+                : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none text-[#F4F4F5]'
             }`}
           >
             <span
               className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider font-bold block ${
-                isMars ? 'text-[#D97706]' : 'text-[#A78BFA]'
+                isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'
               }`}
             >
               {hoveredLandmark.type}
             </span>
             <h4
               className={`text-xs sm:text-sm font-semibold mt-0.5 truncate ${
-                isMars ? 'text-[#F5E6D3]' : 'text-[#F8FAFC]'
+                isMars ? 'text-[#F5E6D3]' : 'text-[#FFFFFF]'
               }`}
             >
               {hoveredLandmark.name}
             </h4>
             <p
               className={`text-[10px] mt-1 line-clamp-2 leading-snug ${
-                isMars ? 'text-[#E7E5E4]' : 'text-[#E0F2FE]/80'
+                isMars ? 'text-[#E7E5E4]' : 'text-[#E4E4E7]'
               }`}
             >
               {hoveredLandmark.description}

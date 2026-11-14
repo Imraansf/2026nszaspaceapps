@@ -326,7 +326,6 @@ export function getHardwarePosition(
 ): HardwareTrajectory {
   const earth = getPlanetPosition('earth', timeInYears);
   const venus = getPlanetPosition('venus', timeInYears);
-  const mars = getPlanetPosition('mars', timeInYears);
   const ceres = getPlanetPosition('ceres', timeInYears);
   const jupiter = getPlanetPosition('jupiter', timeInYears);
   const saturn = getPlanetPosition('saturn', timeInYears);
@@ -338,7 +337,6 @@ export function getHardwarePosition(
     case 'voyager-1': {
       // Launch: 1977.68. Distance in 2026: ~163.5 AU. V_escape: ~3.6 AU/yr (~17.0 km/s)
       // Vector: North Solar Ecliptic (RA: 17h 28m, Dec: +12.0°)
-      const launchYear = 1977.68;
       const vEscapeAUYear = 3.59;
       const rAU = Math.max(1.0, 163.5 + (timeInYears - 2026.0) * vEscapeAUYear);
       const dir = raDecToEclipticVector(17.467, 12.0);

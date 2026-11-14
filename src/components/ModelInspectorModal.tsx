@@ -32,9 +32,25 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
   const modelGroupRef = useRef<THREE.Group | null>(null);
 
   const [isAutoRotating, setIsAutoRotating] = useState(true);
-  const [activeSubsystem, setActiveSubsystem] = useState<string | null>(null);
+  const isAutoRotatingRef = useRef(isAutoRotating);
   const [isLoadingGltf, setIsLoadingGltf] = useState(false);
   const [loadedGltfSuccess, setLoadedGltfSuccess] = useState(false);
+
+  useEffect(() => {
+    isAutoRotatingRef.current = isAutoRotating;
+  }, [isAutoRotating]);
+
+  useEffect(() => {
+    if (!artifact) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        playTelemetryBeep(450);
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [artifact, onClose]);
 
   // Mouse orbit state
   const orbitState = useRef({
@@ -112,6 +128,10 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
   // 1. Initialize Three.js Scene, Camera, Renderer, and Procedural CAD Model
   useEffect(() => {
     if (!artifact || !mountRef.current) return;
+
+    let isDisposed = false;
+    setIsLoadingGltf(false);
+    setLoadedGltfSuccess(false);
 
     const container = mountRef.current;
     const width = container.clientWidth;
@@ -581,7 +601,7 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
       loader.load(
         artifact.model3dUrl,
         (gltf) => {
-          if (!modelGroupRef.current) return;
+          if (isDisposed || !modelGroupRef.current) return;
           const gltfScene = gltf.scene;
 
           // Clear procedural meshes and replace with official NASA GLTF geometry
@@ -623,6 +643,7 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
         },
         undefined,
         (err) => {
+          if (isDisposed) return;
           console.warn('NASA 3D GLTF Model load fallback to procedural CAD:', err);
           setIsLoadingGltf(false);
           setLoadedGltfSuccess(false);
@@ -639,7 +660,7 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
       const delta = clock.getDelta();
 
       if (modelGroupRef.current) {
-        if (isAutoRotating && !orbitState.current.isDragging) {
+        if (isAutoRotatingRef.current && !orbitState.current.isDragging) {
           orbitState.current.rotationY += delta * 0.35;
         }
 
@@ -675,8 +696,10 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
     window.addEventListener('resize', handleResize);
 
     return () => {
+      isDisposed = true;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
+      groundTexture.dispose();
       if (rendererRef.current) {
         rendererRef.current.dispose();
       }

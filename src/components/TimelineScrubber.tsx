@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Artifact } from '../types/space';
 import { getArtifactColor } from '../utils/space-data';
-import { ChevronUp, ChevronDown, Calendar, Sparkles } from 'lucide-react';
+import { ChevronUp, ChevronDown, Calendar } from 'lucide-react';
 
 interface TimelineScrubberProps {
   artifacts: Artifact[];

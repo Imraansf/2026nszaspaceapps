@@ -41,7 +41,7 @@ describe('Lunar Textures and Landmarks Verification', () => {
 
     const mareTranquilitatis = landmarks.find((l) => l.id === 'tranquillitatis');
     assert.ok(mareTranquilitatis, 'Mare Tranquilitatis must be present');
-    assert.strictEqual(mareTranquilitatis?.associatedArtifactId, 'apollo-11');
+    assert.strictEqual(mareTranquilitatis?.associatedArtifactId, 'apollo-11-eagle-easep');
   });
 
   test('All lunar landmarks have valid coordinates within [-90, 90] and [-180, 180]', () => {

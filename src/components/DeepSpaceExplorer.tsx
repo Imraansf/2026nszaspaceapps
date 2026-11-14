@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { Artifact, CelestialBody } from '../types/space';
-import { getArtifactColor, getArtifactColorHex } from '../utils/space-data';
+import { getArtifactColorHex } from '../utils/space-data';
 import { playRadarPing, playTelemetryBeep } from '../utils/audio';
 import {
   createSunTexture,
@@ -23,36 +23,18 @@ import {
   getPlanetPosition,
   getPlanetOrbitPath,
   BASE_YEAR,
-  AU_IN_KM,
-  EARTH_ORBITAL_SPEED_KMS,
-  PlanetState,
-  HardwareTrajectory,
-  SolarSystemState,
 } from '../utils/orbitalEngine';
 import {
-  Compass,
-  Radio,
-  ChevronRight,
-  Info,
   Layers,
-  Sparkles,
-  Zap,
-  Globe,
-  Satellite,
   Pause,
   Play,
   RotateCcw,
   Crosshair,
-  ZoomIn,
-  ZoomOut,
   X,
-  ExternalLink,
+  ChevronRight,
   ChevronUp,
   ChevronDown,
-  ChevronLeft,
-  Gauge,
   Calendar,
-  Menu,
 } from 'lucide-react';
 
 export interface DeepSpaceExplorerProps {
@@ -61,6 +43,7 @@ export interface DeepSpaceExplorerProps {
   onSelectArtifact: (artifact: Artifact | null) => void;
   searchQuery?: string;
   onSwitchBody?: (body: CelestialBody) => void;
+  onPlanetFocusChange?: (hasSelectedPlanet: boolean) => void;
 }
 
 type DeepSpaceFilter = 'all' | 'interstellar' | 'orbiters' | 'small_bodies' | 'telescopes';
@@ -233,6 +216,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
   onSelectArtifact,
   searchQuery = '',
   onSwitchBody,
+  onPlanetFocusChange,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -245,6 +229,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     group: THREE.Group;
     beacon: THREE.Mesh;
     ring: THREE.Mesh;
+    trailLine: THREE.Line | null;
     artifact: Artifact;
     pos: THREE.Vector3;
   }[]>([]);
@@ -263,7 +248,6 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
   const [hoveredArtifact, setHoveredArtifact] = useState<Artifact | null>(null);
   const [hoveredPlanet, setHoveredPlanet] = useState<SolarPlanetData | null>(null);
   const [selectedPlanet, setSelectedPlanet] = useState<SolarPlanetData | null>(null);
-  const [showCoordinateInfo, setShowCoordinateInfo] = useState(false);
   const [showOrbits, setShowOrbits] = useState(true);
   const [isTimelineCollapsed, setIsTimelineCollapsed] = useState(false);
   const [isDockVisible, setIsDockVisible] = useState(true);
@@ -286,6 +270,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
   // Active Dynamic Orbit & Trajectory Tracking
   const selectedPlanetRef = useRef<SolarPlanetData | null>(null);
   const selectedArtifactRef = useRef<Artifact | null>(null);
+  const telemetryArtifactRef = useRef<Artifact | null>(selectedArtifact);
   const hoveredArtifactIdRef = useRef<string | null>(null);
   const currentLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
   const targetLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
@@ -293,6 +278,20 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
   useEffect(() => {
     hoveredArtifactIdRef.current = hoveredArtifact?.id ?? null;
   }, [hoveredArtifact]);
+
+  useEffect(() => {
+    telemetryArtifactRef.current = selectedArtifact;
+  }, [selectedArtifact]);
+
+  useEffect(() => {
+    onPlanetFocusChange?.(Boolean(selectedPlanet));
+  }, [selectedPlanet, onPlanetFocusChange]);
+
+  useEffect(() => {
+    return () => {
+      onPlanetFocusChange?.(false);
+    };
+  }, [onPlanetFocusChange]);
 
   const getPlanetTrackingDistance = (planet: SolarPlanetData): number => {
     if (planet.id === 'sun') return 12;
@@ -612,9 +611,11 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
         setCurrentYearNumber(Math.round(simTimeYearsRef.current * 10) / 10);
         setCurrentSimDate(systemState.dateString);
 
-        // Update live telemetry for selected target
-        if (selectedArtifact) {
-          const h = systemState.hardware.get(selectedArtifact.id);
+        // Update live telemetry for selected target (read via refs to avoid stale closures)
+        const activeArtifact = telemetryArtifactRef.current;
+        const activePlanet = selectedPlanetRef.current;
+        if (activeArtifact) {
+          const h = systemState.hardware.get(activeArtifact.id);
           if (h) {
             setLiveTelemetry({
               velocityKmS: Math.round(h.velocityKmS * 10) / 10,
@@ -622,14 +623,16 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
               orbitalClass: h.orbitalClass,
             });
           }
-        } else if (selectedPlanet && selectedPlanet.id !== 'sun') {
-          const p = systemState.planets.get(selectedPlanet.id);
+        } else if (activePlanet && activePlanet.id !== 'sun') {
+          const p = systemState.planets.get(activePlanet.id);
           if (p) {
             setLiveTelemetry({
               velocityKmS: Math.round(p.currentVelocityKmS * 10) / 10,
               distanceAU: Math.round(p.distanceFromSunAU * 100) / 100,
             });
           }
+        } else {
+          setLiveTelemetry((prev) => (prev === null ? prev : null));
         }
       }
 
@@ -830,22 +833,9 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
       ringMesh.rotation.x = Math.PI / 2;
       probeGroup.add(ringMesh);
 
-      systemGroup.add(probeGroup);
-
-      probeMeshesRef.current.push({
-        group: probeGroup,
-        beacon: beaconMesh,
-        ring: ringMesh,
-        artifact,
-        pos: new THREE.Vector3(
-          hardwarePos.positionScene.x,
-          hardwarePos.positionScene.y,
-          hardwarePos.positionScene.z
-        ),
-      });
-
       // B. True Astrodynamics Trajectory Path (Hyperbolic escape vector / Halo orbit / Ellipse)
       const pathPoints = getHardwareTrajectoryPath(artifact.id, 120);
+      let trailLine: THREE.Line | null = null;
       if (pathPoints.length > 1) {
         const threePath = pathPoints.map((p) => new THREE.Vector3(p.x, p.y, p.z));
         const trailGeo = new THREE.BufferGeometry().setFromPoints(threePath);
@@ -854,11 +844,38 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
           transparent: true,
           opacity: isSelected ? 0.65 : 0.22,
         });
-        const trailLine = new THREE.Line(trailGeo, trailMat);
+        trailLine = new THREE.Line(trailGeo, trailMat);
         trajectoryGroup.add(trailLine);
       }
+
+      systemGroup.add(probeGroup);
+
+      probeMeshesRef.current.push({
+        group: probeGroup,
+        beacon: beaconMesh,
+        ring: ringMesh,
+        trailLine,
+        artifact,
+        pos: new THREE.Vector3(
+          hardwarePos.positionScene.x,
+          hardwarePos.positionScene.y,
+          hardwarePos.positionScene.z
+        ),
+      });
     });
   }, [artifacts, selectedArtifact]);
+
+  // Apply category/search filter visibility to 3D probes and trajectory trails
+  useEffect(() => {
+    const visibleIds = new Set(filteredArtifacts.map((a) => a.id));
+    probeMeshesRef.current.forEach(({ group, trailLine, artifact }) => {
+      const isVisible = visibleIds.has(artifact.id) || selectedArtifact?.id === artifact.id;
+      group.visible = isVisible;
+      if (trailLine) {
+        trailLine.visible = isVisible;
+      }
+    });
+  }, [filteredArtifacts, artifacts, selectedArtifact]);
 
   // Sync tracking refs when selectedArtifact changes
   useEffect(() => {
@@ -1005,8 +1022,10 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
 
-    // 1. Check probe beacons
-    const interactiveProbes = probeMeshesRef.current.map((p) => p.beacon);
+    // 1. Check visible probe beacons
+    const interactiveProbes = probeMeshesRef.current
+      .filter((p) => p.group.visible)
+      .map((p) => p.beacon);
     const probeIntersects = raycaster.intersectObjects(interactiveProbes);
 
     if (probeIntersects.length > 0) {
@@ -1059,8 +1078,10 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
 
-      // 1. Check probe clicks
-      const interactiveProbes = probeMeshesRef.current.map((p) => p.beacon);
+      // 1. Check visible probe clicks
+      const interactiveProbes = probeMeshesRef.current
+        .filter((p) => p.group.visible)
+        .map((p) => p.beacon);
       const probeHits = raycaster.intersectObjects(interactiveProbes);
 
       if (probeHits.length > 0) {
@@ -1120,7 +1141,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
         }`}
       >
         {/* Main Control Panel */}
-        <div className="w-[215px] h-[324.6px] bg-[rgba(28,29,33,0.92)] backdrop-blur-xl border-2 border-[#BAE6FD] rounded-2xl p-3 shadow-none flex flex-col gap-2.5 text-[11px] leading-[12px] text-[#F4F4F5]">
+        <div className="w-[215px] h-[324.6px] overflow-y-auto scrollbar-none bg-[rgba(28,29,33,0.92)] backdrop-blur-xl border-2 border-[#BAE6FD] rounded-2xl p-3 shadow-none flex flex-col gap-2.5 text-[11px] leading-[12px] text-[#F4F4F5]">
           {/* Header */}
           <div className="flex items-center justify-between pb-1.5 border-b border-[#3F3F46]">
             <span className="flex items-center gap-1.5 font-black text-[#F4F4F5] uppercase tracking-widest text-[9px] font-mono">
@@ -1344,13 +1365,13 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
 
       {/* 3. Floating Planetary Spec Card */}
       {selectedPlanet && (
-        <div className="absolute top-16 right-4 z-30 max-w-sm w-full bg-[rgba(6,9,15,0.92)] border-2 border-[#38BDF8] rounded-2xl p-5 shadow-[0_0_28px_rgba(56,189,248,0.22)] backdrop-blur-xl animate-in fade-in slide-in-from-right-4 text-[#F8FAFC]">
-          <div className="flex items-start justify-between gap-4 border-b border-[#38BDF8]/20 pb-3">
+        <div className="absolute top-16 right-4 z-30 max-w-sm w-[calc(100vw-32px)] sm:w-full bg-[rgba(28,29,33,0.94)] border-2 border-[#BAE6FD] rounded-2xl p-5 shadow-none backdrop-blur-xl animate-in fade-in slide-in-from-right-4 text-[#F4F4F5]">
+          <div className="flex items-start justify-between gap-4 border-b border-[#3F3F46] pb-3">
             <div>
-              <span className="text-[10px] font-medium uppercase tracking-widest text-[#38BDF8] block mb-1">
+              <span className="text-[10px] font-medium uppercase tracking-widest text-[#BAE6FD] block mb-1">
                 {selectedPlanet.category.replace('_', ' ')}
               </span>
-              <h3 className="text-lg font-semibold text-[#F8FAFC] tracking-tight">
+              <h3 className="text-lg font-semibold text-[#FFFFFF] tracking-tight">
                 {selectedPlanet.name}
               </h3>
             </div>
@@ -1360,14 +1381,14 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
                 selectedPlanetRef.current = null;
                 targetLookAtRef.current.set(0, 0, 0);
               }}
-              className="p-2 rounded-xl hover:bg-[#38BDF8]/20 text-[#E0F2FE]/70 hover:text-[#F8FAFC] transition-colors active:scale-90"
+              className="p-2 rounded-xl hover:bg-[#34363C] text-[#A1A1AA] hover:text-[#FFFFFF] transition-colors active:scale-90"
               aria-label="Close planet info"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <p className="text-xs text-[#E0F2FE]/85 mt-3 leading-relaxed">
+          <p className="text-xs text-[#E4E4E7] mt-3 leading-relaxed">
             {selectedPlanet.description}
           </p>
 
@@ -1375,25 +1396,25 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
           <div className="grid grid-cols-2 gap-3 mt-4">
             {[
               { label: 'Distance', value: liveTelemetry && selectedPlanet.id !== 'sun' ? `${liveTelemetry.distanceAU} AU` : `${selectedPlanet.semiMajorAxisAU} AU` },
-              { label: 'Velocity', value: liveTelemetry && selectedPlanet.id !== 'sun' ? `${liveTelemetry.velocityKmS} km/s` : 'Orbital Center', color: 'text-[#38BDF8]' },
+              { label: 'Velocity', value: liveTelemetry && selectedPlanet.id !== 'sun' ? `${liveTelemetry.velocityKmS} km/s` : 'Orbital Center', color: 'text-[#BAE6FD]' },
               { label: 'Eccentricity', value: selectedPlanet.eccentricity },
               { label: 'Axial Tilt', value: `${selectedPlanet.axialTiltDeg}°` },
             ].map((metric, i) => (
-              <div key={i} className="bg-[#0D131F] rounded-xl p-2.5 border border-[#38BDF8]/20">
-                <span className="text-[9px] text-[#E0F2FE]/60 uppercase tracking-wider block mb-0.5">{metric.label}</span>
-                <span className={`text-[11px] font-semibold font-mono tabular-nums ${metric.color || 'text-[#F8FAFC]'}`}>{metric.value}</span>
+              <div key={i} className="bg-[#27282D] rounded-xl p-2.5 border border-[#3F3F46]">
+                <span className="text-[9px] text-[#A1A1AA] uppercase tracking-wider block mb-0.5">{metric.label}</span>
+                <span className={`text-[11px] font-semibold font-mono tabular-nums ${metric.color || 'text-[#FFFFFF]'}`}>{metric.value}</span>
               </div>
             ))}
           </div>
 
           {/* Associated Relics */}
-          <div className="mt-4 pt-4 border-t border-[#38BDF8]/20">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-[#E0F2FE]/60 block mb-2">
+          <div className="mt-4 pt-4 border-t border-[#3F3F46]">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-[#A1A1AA] block mb-2">
               Mission Hardware
             </span>
             <div className="flex flex-wrap gap-1.5">
               {selectedPlanet.relicsPresent.map((relic, idx) => (
-                <span key={idx} className="px-2 py-0.5 rounded-full bg-[#0D131F] border border-[#38BDF8]/30 text-[10px] text-[#E0F2FE]">
+                <span key={idx} className="px-2 py-0.5 rounded-full bg-[#27282D] border border-[#BAE6FD]/60 text-[10px] text-[#E4E4E7]">
                   {relic}
                 </span>
               ))}
@@ -1404,7 +1425,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
           {(selectedPlanet.id === 'mars' || selectedPlanet.id === 'earth') && onSwitchBody && (
             <button
               onClick={() => onSwitchBody(selectedPlanet.id === 'mars' ? 'mars' : 'moon')}
-              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#06090F] text-xs font-bold shadow-[0_0_16px_rgba(56,189,248,0.3)] transition-all active:scale-[0.98]"
+              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#BAE6FD] hover:bg-[#FFFFFF] text-[#1C1D21] text-xs font-bold shadow-none transition-all active:scale-[0.98]"
             >
               <span>Inspect Surface</span>
               <ChevronRight className="w-4 h-4" />
@@ -1417,7 +1438,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
       <button
         onClick={() => setIsDockVisible(true)}
         className={`absolute top-16 left-4 z-20 w-[172.2px] h-[43.2px] flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none backdrop-blur-xl transition-all duration-500 ease-in-out active:scale-95 ${
-          isDockVisible ? '-translate-x-32 opacity-0' : 'translate-x-0 opacity-100'
+          isDockVisible ? '-translate-x-32 opacity-0 pointer-events-none' : 'translate-x-0 opacity-100 pointer-events-auto'
         }`}
         aria-label="Restore controls"
       >
@@ -1484,12 +1505,12 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
 
       {/* 4B. Active Planetary Follow-Cam Banner (planets only — hidden for Deep Space artifacts) */}
       {selectedPlanet && !selectedArtifact && (
-        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-20 pointer-events-auto flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-[rgba(6,9,15,0.92)] border-2 border-[#38BDF8] text-[#F8FAFC] shadow-[0_0_20px_rgba(56,189,248,0.28)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2">
-          <span className="w-2 h-2 rounded-full bg-[#38BDF8] animate-pulse shadow-[0_0_8px_#38BDF8]" />
+        <div className="absolute top-16 sm:top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-auto flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none backdrop-blur-xl animate-in fade-in slide-in-from-top-2">
+          <span className="w-2 h-2 rounded-full bg-[#BAE6FD]" />
           <span className="text-[10px] sm:text-[11px] font-semibold tracking-wide">
             Follow Cam: {selectedPlanet.name}
           </span>
-          <span className="text-[9px] font-mono uppercase text-[#38BDF8] bg-[#38BDF8]/15 border border-[#38BDF8]/40 px-1.5 py-0.5 rounded">
+          <span className="text-[9px] font-mono uppercase text-[#1C1D21] bg-[#BAE6FD] border border-[#BAE6FD] px-1.5 py-0.5 rounded font-bold">
             Live Locked
           </span>
           <button
@@ -1502,7 +1523,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
               targetLookAtRef.current.set(0, 0, 0);
               targetZoomDistanceRef.current = 105;
             }}
-            className="ml-0.5 p-1 hover:bg-[#38BDF8]/20 rounded-full text-[#E0F2FE]/70 hover:text-[#F8FAFC] transition-colors"
+            className="ml-0.5 p-1 hover:bg-[#34363C] rounded-full text-[#A1A1AA] hover:text-[#FFFFFF] transition-colors"
             title="Release Follow Cam and Return to Solar System Overview"
           >
             <X className="w-3.5 h-3.5" />
@@ -1511,63 +1532,16 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
       )}
 
       {hoveredPlanet && !hoveredArtifact && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-[rgba(6,9,15,0.94)] border-2 border-[#7C3AED] rounded-2xl px-4 py-3 shadow-[0_0_24px_rgba(124,58,237,0.3)] backdrop-blur-xl text-center max-w-xs animate-in fade-in zoom-in-95">
-          <span className="text-[10px] font-medium uppercase tracking-widest text-[#A78BFA] block">
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-[rgba(28,29,33,0.94)] border-2 border-[#BAE6FD] rounded-2xl px-4 py-3 shadow-none backdrop-blur-xl text-center max-w-xs animate-in fade-in zoom-in-95">
+          <span className="text-[10px] font-medium uppercase tracking-widest text-[#BAE6FD] block">
             {hoveredPlanet.category.replace('_', ' ')}
           </span>
-          <h4 className="text-sm font-semibold text-[#F8FAFC] mt-1">
+          <h4 className="text-sm font-semibold text-[#FFFFFF] mt-1">
             {hoveredPlanet.name}
           </h4>
-          <span className="text-[10px] text-[#38BDF8] block mt-1 font-mono tabular-nums">
+          <span className="text-[10px] text-[#D4D4D8] block mt-1 font-mono tabular-nums">
             {hoveredPlanet.semiMajorAxisAU} AU Semi-Major Axis
           </span>
-        </div>
-      )}
-
-      {/* 6. Astrodynamics Specification Modal */}
-      {showCoordinateInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#06090F]/85 backdrop-blur-md p-4 animate-in fade-in duration-300">
-          <div className="bg-[#0D131F] border-2 border-[#38BDF8] rounded-3xl p-6 max-w-lg w-full shadow-[0_0_32px_rgba(56,189,248,0.28)] animate-in zoom-in-95 text-[#F8FAFC]">
-            <div className="flex items-center justify-between pb-4 border-b border-[#38BDF8]/20">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#38BDF8]/15 border border-[#38BDF8]/40 flex items-center justify-center">
-                  <Compass className="w-4 h-4 text-[#38BDF8]" />
-                </div>
-                <h3 className="font-semibold text-[#F8FAFC] tracking-tight">
-                  Astrodynamics Engine
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowCoordinateInfo(false)}
-                className="p-2 rounded-full hover:bg-[#38BDF8]/20 text-[#E0F2FE]/70 hover:text-[#F8FAFC] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="mt-5 space-y-4">
-              {[
-                { title: "Kepler's Harmonic Law", content: "Planetary velocity decreases with distance: T² = a³. Outer worlds orbit slower than inner worlds.", icon: <Zap className="w-3.5 h-3.5" /> },
-                { title: "Trajectory Physics", content: "Probes use hyperbolic escape vectors, halo orbits, or heliocentric drifts based on NASA mission data.", icon: <Radio className="w-3.5 h-3.5" /> },
-                { title: "Multi-Engine Pipeline", content: "Combines Cesium High-Res topography with Three.js multi-body propagation logic.", icon: <Layers className="w-3.5 h-3.5" /> }
-              ].map((item, i) => (
-                <div key={i} className="bg-[#06090F] rounded-2xl p-4 border border-[#38BDF8]/25">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[#38BDF8]">{item.icon}</span>
-                    <span className="text-xs font-semibold text-[#F8FAFC] uppercase tracking-wider">{item.title}</span>
-                  </div>
-                  <p className="text-xs text-[#E0F2FE]/80 leading-relaxed">{item.content}</p>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setShowCoordinateInfo(false)}
-              className="mt-6 w-full py-3 rounded-2xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#06090F] font-bold text-sm transition-transform active:scale-[0.98]"
-            >
-              Done
-            </button>
-          </div>
         </div>
       )}
 

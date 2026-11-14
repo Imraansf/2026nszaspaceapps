@@ -3,10 +3,6 @@ import * as THREE from 'three';
 import { Artifact, CelestialBody, LunarLandmark } from '../types/space';
 import { playRadarPing, playTelemetryBeep } from '../utils/audio';
 import {
-  Compass,
-  Crosshair,
-} from 'lucide-react';
-import {
   createGeographicLunarTexture,
   createGeographicLunarBumpMap,
   createGeographicMarsTexture,

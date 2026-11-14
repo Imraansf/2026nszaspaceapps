@@ -100,17 +100,43 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
   onPrevArtifact,
   onInspectModel,
 }) => {
-  if (!artifact) return null;
-
   const [heroImgError, setHeroImgError] = useState(false);
   const [galleryErrors, setGalleryErrors] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const nasaVoice = useNASAVoice({
-    defaultPitch: artifact.id === 'spirit-and-opportunity' ? 1.02 : 0.95,
+    defaultPitch: artifact?.id === 'spirit-and-opportunity' ? 1.02 : 0.95,
     defaultRate: 0.95,
     defaultFilterEnabled: true,
   });
+
+  const stopVoiceRef = useRef(nasaVoice.stop);
+  useEffect(() => {
+    stopVoiceRef.current = nasaVoice.stop;
+  }, [nasaVoice.stop]);
+
+  useEffect(() => {
+    if (!artifact?.id) return;
+    setHeroImgError(false);
+    setGalleryErrors({});
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    return () => {
+      stopVoiceRef.current();
+    };
+  }, [artifact?.id]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        stopVoiceRef.current();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  if (!artifact) return null;
 
   const narrationText = `${artifact.name}. ${artifact.firstPersonMonologue}`;
   const cleanYoutubeUrl = artifact.youtubeUrl
@@ -118,26 +144,6 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
     : undefined;
   const youtubeId = cleanYoutubeUrl ? extractYouTubeId(cleanYoutubeUrl) : null;
   const zoneMeta = getZoneMeta(artifact.body);
-
-  useEffect(() => {
-    setHeroImgError(false);
-    setGalleryErrors({});
-    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    return () => {
-      nasaVoice.stop();
-    };
-  }, [artifact.id]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        nasaVoice.stop();
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
 
   const diaryPhotos = (artifact.galleryImages || []).filter(
     (g) => g.postcardTarget === 'diary'
