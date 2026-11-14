@@ -320,166 +320,157 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
         </header>
 
         {/* ================================================================ */}
-        {/* 2. COMPACT MEDIA HEADER (PHOTO + YOUTUBE VIDEO)                  */}
+        {/* 2. SEPARATE MEDIA BOXES (PHOTO BOX & VIDEO BOX)                  */}
         {/* ================================================================ */}
         <section
-          className={`rounded-3xl p-4 sm:p-5 ${
-            isMars
-              ? 'bg-[#F5E6D3] border-[3px] border-[#44403C] shadow-[0_6px_0_#D97706,0_16px_36px_rgba(0,0,0,0.4)]'
-              : 'bg-[#F8FAFC] border-[3px] border-[#38BDF8] shadow-[0_6px_0_#38BDF8]'
+          className={`grid gap-6 items-start ${
+            youtubeId ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
           }`}
         >
+          {/* Box 1: Standalone Mission Photo Box */}
           <div
-            className={`grid gap-4 items-stretch ${
-              youtubeId ? 'grid-cols-1 md:grid-cols-12' : 'grid-cols-1'
+            className={`flex flex-col rounded-3xl overflow-hidden ${
+              isMars
+                ? 'bg-[#F5E6D3] border-[3px] border-[#44403C] shadow-[0_6px_0_#D97706,0_16px_36px_rgba(0,0,0,0.4)]'
+                : 'bg-[#F8FAFC] border-[3px] border-[#38BDF8] shadow-[0_6px_0_#38BDF8]'
             }`}
           >
-            {/* Mission Photo Card */}
+            {/* Photo Box Header */}
             <div
-              className={`flex flex-col rounded-2xl overflow-hidden border-2 ${
-                isMars
-                  ? 'border-[#44403C] bg-[#E7E5E4]'
-                  : 'border-[#06090F] bg-[#E0F2FE]/45'
-              } ${youtubeId ? 'md:col-span-5' : 'md:grid md:grid-cols-12'}`}
+              className={`px-4 py-2.5 border-b-[3px] flex items-center justify-between gap-2 ${
+                isMars ? 'bg-[#E7E5E4] border-[#44403C]' : 'bg-[#E0F2FE] border-[#06090F]'
+              }`}
             >
               <div
-                className={`relative overflow-hidden ${
-                  isMars ? 'bg-[#1C140F]' : 'bg-[#06090F]'
-                } ${
-                  youtubeId
-                    ? 'h-36 sm:h-40 w-full'
-                    : 'h-40 sm:h-44 w-full md:col-span-7'
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border-2 text-[11px] font-black uppercase tracking-wider ${
+                  isMars
+                    ? 'bg-[#D97706] border-[#1C140F] text-[#1C140F]'
+                    : 'bg-[#38BDF8] border-[#06090F] text-[#06090F]'
                 }`}
               >
-                <div
-                  className={`absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border-2 text-[10px] font-black uppercase shadow-sm ${
-                    isMars
-                      ? 'bg-[#D97706] border-[#1C140F] text-[#1C140F]'
-                      : 'bg-[#38BDF8] border-[#06090F] text-[#06090F]'
-                  }`}
-                >
-                  <Camera className="w-3 h-3" />
-                  <span>Mission Photo</span>
-                </div>
-
-                {!youtubeId && (
-                  <div
-                    className={`absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border-2 text-[10px] font-black uppercase shadow-sm ${
-                      isMars
-                        ? 'bg-[#F5E6D3] border-[#1C140F] text-[#1C140F]'
-                        : 'bg-[#F8FAFC] border-[#06090F] text-[#06090F]'
-                    }`}
-                  >
-                    <Award className={`w-3 h-3 ${isMars ? 'text-[#D97706]' : 'text-[#7C3AED]'}`} />
-                    <span>Rare Archive Snapshot</span>
-                  </div>
-                )}
-
-                {artifact.imageUrl && !heroImgError ? (
-                  <img
-                    src={artifact.imageUrl}
-                    alt={artifact.name}
-                    referrerPolicy="no-referrer"
-                    onError={() => setHeroImgError(true)}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div
-                    className={`w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br ${
-                      isMars
-                        ? 'from-[#291D16] to-[#1C140F] text-[#F5E6D3]'
-                        : 'from-[#0D131F] to-[#06090F] text-[#F8FAFC]'
-                    }`}
-                  >
-                    <Rocket className={`w-8 h-8 mb-1 ${isMars ? 'text-[#D97706]' : 'text-[#38BDF8]'}`} />
-                    <p className="text-xs font-black">{artifact.name}</p>
-                    <p className={`text-[11px] font-bold ${isMars ? 'text-[#A8A29E]' : 'text-[#E0F2FE]/80'}`}>
-                      NASA Archive • {artifact.year}
-                    </p>
-                  </div>
-                )}
+                <Camera className="w-3.5 h-3.5" />
+                <span>Mission Photo</span>
               </div>
 
               <div
-                className={`px-3.5 py-2.5 text-xs font-bold flex flex-col justify-center ${
-                  isMars ? 'text-[#1C140F] bg-[#F5E6D3]' : 'text-[#06090F] bg-[#F8FAFC]'
-                } ${
-                  youtubeId
-                    ? isMars
-                      ? 'border-t-2 border-[#44403C]/30'
-                      : 'border-t-2 border-[#06090F]/15'
-                    : isMars
-                    ? 'md:col-span-5 md:border-l-2 border-t-2 md:border-t-0 border-[#44403C]/30 p-5 space-y-2'
-                    : 'md:col-span-5 md:border-l-2 border-t-2 md:border-t-0 border-[#06090F]/15 p-5 space-y-2'
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border-2 text-[10px] font-black uppercase ${
+                  isMars
+                    ? 'bg-[#F5E6D3] border-[#1C140F] text-[#1C140F]'
+                    : 'bg-[#F8FAFC] border-[#06090F] text-[#06090F]'
                 }`}
               >
-                {!youtubeId && (
-                  <span
-                    className={`inline-flex w-fit items-center gap-1 px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase ${
-                      isMars
-                        ? 'bg-[#D97706] border-[#1C140F] text-[#1C140F]'
-                        : 'bg-[#38BDF8] border-[#06090F] text-[#06090F]'
-                    }`}
-                  >
-                    Historic NASA Frame
-                  </span>
-                )}
-                <p className="leading-snug line-clamp-2">
-                  {artifact.imageCaption ||
-                    `${artifact.name} — NASA Historical Archive`}
-                </p>
+                <Award className={`w-3 h-3 ${isMars ? 'text-[#D97706]' : 'text-[#7C3AED]'}`} />
+                <span>{youtubeId ? 'NASA Archive Frame' : 'Rare Archive Snapshot'}</span>
               </div>
             </div>
 
-            {/* Embedded YouTube Video */}
-            {youtubeId && (
+            {/* Full Uncropped Photo Frame */}
+            <div
+              className={`flex items-center justify-center p-3 sm:p-4 ${
+                isMars ? 'bg-[#1C140F]' : 'bg-[#06090F]'
+              }`}
+            >
+              {artifact.imageUrl && !heroImgError ? (
+                <img
+                  src={artifact.imageUrl}
+                  alt={artifact.name}
+                  referrerPolicy="no-referrer"
+                  onError={() => setHeroImgError(true)}
+                  className="w-full h-auto max-h-[340px] sm:max-h-[400px] object-contain mx-auto rounded-xl"
+                />
+              ) : (
+                <div
+                  className={`w-full h-56 flex flex-col items-center justify-center p-4 text-center rounded-xl bg-gradient-to-br ${
+                    isMars
+                      ? 'from-[#291D16] to-[#1C140F] text-[#F5E6D3]'
+                      : 'from-[#0D131F] to-[#06090F] text-[#F8FAFC]'
+                  }`}
+                >
+                  <Rocket className={`w-8 h-8 mb-1 ${isMars ? 'text-[#D97706]' : 'text-[#38BDF8]'}`} />
+                  <p className="text-xs font-black">{artifact.name}</p>
+                  <p className={`text-[11px] font-bold ${isMars ? 'text-[#A8A29E]' : 'text-[#E0F2FE]/80'}`}>
+                    NASA Archive • {artifact.year}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Photo Caption Footer */}
+            <div
+              className={`px-4 py-3 text-xs font-bold border-t-2 ${
+                isMars
+                  ? 'text-[#1C140F] bg-[#F5E6D3] border-[#44403C]/30'
+                  : 'text-[#06090F] bg-[#F8FAFC] border-[#06090F]/15'
+              }`}
+            >
+              <p className="leading-snug">
+                {artifact.imageCaption || `${artifact.name} — NASA Historical Archive`}
+              </p>
+            </div>
+          </div>
+
+          {/* Box 2: Standalone Embedded YouTube Video Box (Strict 16:9 frame) */}
+          {youtubeId && (
+            <div
+              className={`flex flex-col rounded-3xl overflow-hidden ${
+                isMars
+                  ? 'bg-[#291D16] border-[3px] border-[#44403C] shadow-[0_6px_0_#D97706,0_16px_36px_rgba(0,0,0,0.4)]'
+                  : 'bg-[#0D131F] border-[3px] border-[#38BDF8] shadow-[0_6px_0_#38BDF8]'
+              }`}
+            >
               <div
-                className={`md:col-span-7 flex flex-col rounded-2xl overflow-hidden border-2 ${
-                  isMars ? 'border-[#44403C] bg-[#291D16]' : 'border-[#06090F] bg-[#0D131F]'
+                className={`px-4 py-2.5 border-b-[3px] flex items-center justify-between gap-2 ${
+                  isMars ? 'bg-[#291D16] border-[#44403C]' : 'bg-[#0D131F] border-[#38BDF8]/40'
                 }`}
               >
                 <div
-                  className={`px-3.5 py-2 border-b-2 flex items-center justify-between gap-2 ${
-                    isMars ? 'bg-[#291D16] border-[#44403C]' : 'bg-[#0D131F] border-[#06090F]'
+                  className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider ${
+                    isMars ? 'text-[#F5E6D3]' : 'text-[#F8FAFC]'
                   }`}
                 >
-                  <div
-                    className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider ${
-                      isMars ? 'text-[#F5E6D3]' : 'text-[#F8FAFC]'
+                  <Youtube className={`w-4 h-4 ${isMars ? 'text-[#D97706]' : 'text-[#38BDF8]'}`} />
+                  <span>Mission Video Feed</span>
+                </div>
+                {cleanYoutubeUrl && (
+                  <a
+                    href={cleanYoutubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-black transition-colors ${
+                      isMars
+                        ? 'bg-[#F5E6D3] hover:bg-[#D97706] border-[#1C140F] text-[#1C140F]'
+                        : 'bg-[#F8FAFC] hover:bg-[#38BDF8] border-[#06090F] text-[#06090F]'
                     }`}
                   >
-                    <Youtube className={`w-4 h-4 ${isMars ? 'text-[#D97706]' : 'text-[#38BDF8]'}`} />
-                    <span>Mission Video Feed</span>
-                  </div>
-                  {cleanYoutubeUrl && (
-                    <a
-                      href={cleanYoutubeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-black transition-colors ${
-                        isMars
-                          ? 'bg-[#F5E6D3] hover:bg-[#D97706] border-[#1C140F] text-[#1C140F]'
-                          : 'bg-[#F8FAFC] hover:bg-[#38BDF8] border-[#06090F] text-[#06090F]'
-                      }`}
-                    >
-                      <span>Open YouTube</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  )}
-                </div>
-
-                <div className="relative w-full h-36 sm:h-40 bg-black flex-1">
-                  <iframe
-                    className="w-full h-full"
-                    src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
-                    title={`${artifact.name} Mission Video`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
+                    <span>Open YouTube</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                )}
               </div>
-            )}
-          </div>
+
+              <div className="relative w-full aspect-video bg-black">
+                <iframe
+                  className="absolute inset-0 w-full h-full"
+                  src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
+                  title={`${artifact.name} Mission Video`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+
+              <div
+                className={`px-4 py-3 text-xs font-bold border-t-2 ${
+                  isMars
+                    ? 'text-[#E7E5E4] bg-[#1C140F] border-[#44403C]'
+                    : 'text-[#E0F2FE] bg-[#06090F] border-[#38BDF8]/25'
+                }`}
+              >
+                <p className="leading-snug truncate">
+                  NASA Archival Mission Footage • {artifact.mission} ({artifact.year})
+                </p>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ================================================================ */}
@@ -630,20 +621,24 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                           : 'bg-[#F8FAFC] border-[#06090F] shadow-[0_4px_0_#06090F]'
                       }`}
                     >
-                      <img
-                        src={photo.url}
-                        alt={photo.caption}
-                        referrerPolicy="no-referrer"
-                        onError={() =>
-                          setGalleryErrors((prev) => ({
-                            ...prev,
-                            [photo.url]: true,
-                          }))
-                        }
-                        className={`w-full h-36 object-cover rounded-xl border ${
-                          isMars ? 'border-[#44403C]' : 'border-[#06090F]'
+                      <div
+                        className={`rounded-xl overflow-hidden border p-1.5 ${
+                          isMars ? 'bg-[#1C140F] border-[#44403C]' : 'bg-[#06090F] border-[#06090F]'
                         }`}
-                      />
+                      >
+                        <img
+                          src={photo.url}
+                          alt={photo.caption}
+                          referrerPolicy="no-referrer"
+                          onError={() =>
+                            setGalleryErrors((prev) => ({
+                              ...prev,
+                              [photo.url]: true,
+                            }))
+                          }
+                          className="w-full h-auto max-h-60 object-contain mx-auto rounded-lg"
+                        />
+                      </div>
                       <figcaption
                         className={`mt-2 px-1 text-xs font-bold leading-snug ${
                           isMars ? 'text-[#1C140F]' : 'text-[#06090F]'
@@ -1048,28 +1043,32 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                   !galleryErrors[photo.url] ? (
                     <figure
                       key={photo.url}
-                      className={`border-2 rounded-2xl p-2.5 flex items-center gap-3.5 ${
+                      className={`border-2 rounded-2xl p-3 flex flex-col gap-2.5 ${
                         isMars
                           ? 'bg-[#E7E5E4] border-[#44403C]'
                           : 'bg-[#E0F2FE]/45 border-[#06090F]'
                       }`}
                     >
-                      <img
-                        src={photo.url}
-                        alt={photo.caption}
-                        referrerPolicy="no-referrer"
-                        onError={() =>
-                          setGalleryErrors((prev) => ({
-                            ...prev,
-                            [photo.url]: true,
-                          }))
-                        }
-                        className={`w-28 h-20 object-cover rounded-xl border shrink-0 ${
-                          isMars ? 'border-[#44403C]' : 'border-[#06090F]'
+                      <div
+                        className={`rounded-xl overflow-hidden border p-1.5 ${
+                          isMars ? 'bg-[#1C140F] border-[#44403C]' : 'bg-[#06090F] border-[#06090F]'
                         }`}
-                      />
+                      >
+                        <img
+                          src={photo.url}
+                          alt={photo.caption}
+                          referrerPolicy="no-referrer"
+                          onError={() =>
+                            setGalleryErrors((prev) => ({
+                              ...prev,
+                              [photo.url]: true,
+                            }))
+                          }
+                          className="w-full h-auto max-h-64 object-contain mx-auto rounded-lg"
+                        />
+                      </div>
                       <figcaption
-                        className={`text-xs font-bold leading-snug ${
+                        className={`px-1 text-xs font-bold leading-snug ${
                           isMars ? 'text-[#1C140F]' : 'text-[#06090F]'
                         }`}
                       >
@@ -1244,28 +1243,32 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                   !galleryErrors[photo.url] ? (
                     <figure
                       key={photo.url}
-                      className={`border-2 rounded-2xl p-2.5 flex items-center gap-3.5 ${
+                      className={`border-2 rounded-2xl p-3 flex flex-col gap-2.5 ${
                         isMars
                           ? 'bg-[#E7E5E4] border-[#44403C]'
                           : 'bg-[#E0F2FE]/45 border-[#06090F]'
                       }`}
                     >
-                      <img
-                        src={photo.url}
-                        alt={photo.caption}
-                        referrerPolicy="no-referrer"
-                        onError={() =>
-                          setGalleryErrors((prev) => ({
-                            ...prev,
-                            [photo.url]: true,
-                          }))
-                        }
-                        className={`w-28 h-20 object-cover rounded-xl border shrink-0 ${
-                          isMars ? 'border-[#44403C]' : 'border-[#06090F]'
+                      <div
+                        className={`rounded-xl overflow-hidden border p-1.5 ${
+                          isMars ? 'bg-[#1C140F] border-[#44403C]' : 'bg-[#06090F] border-[#06090F]'
                         }`}
-                      />
+                      >
+                        <img
+                          src={photo.url}
+                          alt={photo.caption}
+                          referrerPolicy="no-referrer"
+                          onError={() =>
+                            setGalleryErrors((prev) => ({
+                              ...prev,
+                              [photo.url]: true,
+                            }))
+                          }
+                          className="w-full h-auto max-h-64 object-contain mx-auto rounded-lg"
+                        />
+                      </div>
                       <figcaption
-                        className={`text-xs font-bold leading-snug ${
+                        className={`px-1 text-xs font-bold leading-snug ${
                           isMars ? 'text-[#1C140F]' : 'text-[#06090F]'
                         }`}
                       >

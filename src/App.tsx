@@ -371,7 +371,7 @@ export default function App() {
           {/* Timeline Carousel Strip: Simplistic & Mobile Friendly */}
           {!isTimelineCollapsed && (
             <div
-              className={`pointer-events-auto w-[678px] max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-11.5rem)] md:max-w-[calc(100vw-17.5rem)] h-[65.7875px] sm:translate-x-20 md:translate-x-32 backdrop-blur-xl rounded-xl sm:rounded-2xl p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory ${
+              className={`pointer-events-auto w-[678px] max-w-full h-[65.7875px] backdrop-blur-xl rounded-xl sm:rounded-2xl p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory ${
                 isMars
                   ? 'bg-[rgba(28,20,15,0.85)] border border-[#57534E] shadow-[0_10px_30px_rgba(0,0,0,0.55)]'
                   : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none'
