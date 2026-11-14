@@ -634,51 +634,6 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = React.memo(({
         },
       });
       pillEntity.relicData = relic;
-
-      // Optional secondary site pin (e.g., Opportunity Rover at Meridiani Planum)
-      if (
-        relic.coordinates?.secondaryLat !== undefined &&
-        relic.coordinates?.secondaryLon !== undefined
-      ) {
-        let secLon = relic.coordinates.secondaryLon;
-        while (secLon > 180) secLon -= 360;
-        while (secLon < -180) secLon += 360;
-        const secPosition = Cesium.Cartesian3.fromDegrees(
-          secLon,
-          relic.coordinates.secondaryLat,
-          100,
-          planetaryEllipsoid
-        );
-        const secEntity = viewer.entities.add({
-          id: `relic-${relic.id}-secondary`,
-          name: `${relic.name} (Opportunity)`,
-          isRelic: true,
-          position: secPosition,
-          billboard: {
-            image: getRadarTargetIcon(isSelected, isMars),
-            scale: isSelected ? 0.65 : 0.54,
-            scaleByDistance: new Cesium.NearFarScalar(1.0e4, 1.15, 1.5e7, 0.55),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          },
-        });
-        secEntity.relicData = relic;
-
-        const secPillEntity = viewer.entities.add({
-          id: `relic-${relic.id}-secondary-pill`,
-          name: `${relic.name} (Opportunity) Label`,
-          isRelic: true,
-          position: secPosition,
-          billboard: {
-            image: getPillLabelIcon('OPPORTUNITY (MERIDIANI)', isSelected, isMars),
-            scale: 0.48,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            pixelOffset: new Cesium.Cartesian2(0, -18),
-            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, maxLabelDist),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          },
-        });
-        secPillEntity.relicData = relic;
-      }
     });
 
     updateGlobeHorizonOcclusion(viewer, planetaryEllipsoid);
@@ -706,17 +661,6 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = React.memo(({
       const pillEntity = viewer.entities.getById(`relic-${relic.id}-pill`);
       if (pillEntity?.billboard) {
         pillEntity.billboard.image = getPillLabelIcon(labelText, isSelected, isMars);
-      }
-
-      const secPinEntity = viewer.entities.getById(`relic-${relic.id}-secondary`);
-      if (secPinEntity?.billboard) {
-        secPinEntity.billboard.image = getRadarTargetIcon(isSelected, isMars);
-        secPinEntity.billboard.scale = isSelected ? 0.65 : isHovered ? 0.62 : 0.54;
-      }
-
-      const secPillEntity = viewer.entities.getById(`relic-${relic.id}-secondary-pill`);
-      if (secPillEntity?.billboard) {
-        secPillEntity.billboard.image = getPillLabelIcon('OPPORTUNITY (MERIDIANI)', isSelected, isMars);
       }
     });
 
